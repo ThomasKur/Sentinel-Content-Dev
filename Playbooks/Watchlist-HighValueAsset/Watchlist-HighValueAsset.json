@@ -1,0 +1,310 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workflows_Watchlist_HighValueAsset_name": {
+            "defaultValue": "Watchlist-HighValueAsset",
+            "type": "String"
+        },
+        "connections_azuremonitorlogs_2_externalid": {
+            "defaultValue": "/subscriptions/f1e4d1e9-981c-4b74-b191-70bfe0e50651/resourceGroups/rg_mtplab_sentinel01/providers/Microsoft.Web/connections/azuremonitorlogs-2",
+            "type": "String"
+        },
+        "connections_azuresentinel_2_externalid": {
+            "defaultValue": "/subscriptions/f1e4d1e9-981c-4b74-b191-70bfe0e50651/resourceGroups/rg_mtplab_sentinel01/providers/Microsoft.Web/connections/azuresentinel-2",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('workflows_Watchlist_HighValueAsset_name')]",
+            "location": "westeurope",
+            "tags": {
+                "hidden-SentinelTemplateName": "Watchlist-CloseIncidentSafeIps",
+                "hidden-SentinelTemplateVersion": "1.0"
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "Microsoft_Sentinel_incident": {
+                            "type": "ApiConnectionWebhook",
+                            "inputs": {
+                                "body": {
+                                    "callback_url": "@{listCallbackUrl()}"
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuresentinel_2']['connectionId']"
+                                    }
+                                },
+                                "path": "/incident-creation"
+                            }
+                        }
+                    },
+                    "actions": {
+                        "Add_comment_to_incident_(V3)": {
+                            "runAfter": {
+                                "Create_HTML_table_-_OtherAssets": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "incidentArmId": "@triggerBody()?['object']?['id']",
+                                    "message": "<p>A playbook ran to check if the Hosts in this incident are part of the High Value Assets watchlist (@{variables('WatchlistName')}).<br>\nThe following Hosts were found:<br>\n<br>\n<br>\n@{body('Create_HTML_table_-_HighValueAssets')}<br>\n<br>\n@{body('Create_HTML_table_-_OtherAssets')}</p>"
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuresentinel_2']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/Incidents/Comment"
+                            }
+                        },
+                        "Condition": {
+                            "actions": {
+                                "Update_incident": {
+                                    "runAfter": {},
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": {
+                                            "incidentArmId": "@triggerBody()?['object']?['id']",
+                                            "severity": "High"
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azuresentinel_2']['connectionId']"
+                                            }
+                                        },
+                                        "method": "put",
+                                        "path": "/Incidents"
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Add_comment_to_incident_(V3)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "and": [
+                                    {
+                                        "not": {
+                                            "equals": [
+                                                "@length(variables('HighAssetHost'))",
+                                                0
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "Create_HTML_table_-_HighValueAssets": {
+                            "runAfter": {
+                                "For_each": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Table",
+                            "inputs": {
+                                "format": "HTML",
+                                "from": "@variables('HighAssetHost')"
+                            }
+                        },
+                        "Create_HTML_table_-_OtherAssets": {
+                            "runAfter": {
+                                "Create_HTML_table_-_HighValueAssets": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Table",
+                            "inputs": {
+                                "format": "HTML",
+                                "from": "@variables('NotHighAssetHost')"
+                            }
+                        },
+                        "Entities_-_Get_Hosts": {
+                            "runAfter": {
+                                "Initialize_variable_-_not_high_assets": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuresentinel_2']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/entities/host"
+                            }
+                        },
+                        "For_each": {
+                            "foreach": "@body('Entities_-_Get_Hosts')?['Hosts']",
+                            "actions": {
+                                "Hostname_found_in_watchlist": {
+                                    "actions": {
+                                        "Append_to_array_variable": {
+                                            "runAfter": {},
+                                            "type": "AppendToArrayVariable",
+                                            "inputs": {
+                                                "name": "HighAssetHost",
+                                                "value": {
+                                                    "High Value Assets": "@{items('For_each')?['HostName']}"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {
+                                        "Run_query_and_list_results": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "else": {
+                                        "actions": {
+                                            "Append_to_array_variable_2": {
+                                                "runAfter": {},
+                                                "type": "AppendToArrayVariable",
+                                                "inputs": {
+                                                    "name": "NotHighAssetHost",
+                                                    "value": {
+                                                        "Other Assets": "@{items('For_each')?['HostName']}"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "expression": {
+                                        "and": [
+                                            {
+                                                "greater": [
+                                                    "@length(body('Run_query_and_list_results')?['value'])",
+                                                    0
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    "type": "If"
+                                },
+                                "Run_query_and_list_results": {
+                                    "runAfter": {},
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": "_GetWatchlist(\"@{variables('WatchlistName')}\") \n| where  ['Asset FQDN'] contains \"@{items('For_each')?['HostName']}\"",
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                                            }
+                                        },
+                                        "method": "post",
+                                        "path": "/queryData",
+                                        "queries": {
+                                            "resourcegroups": "rg_mtplab_sentinel01",
+                                            "resourcename": "MTPLabSentinel01",
+                                            "resourcetype": "Log Analytics Workspace",
+                                            "subscriptions": "f1e4d1e9-981c-4b74-b191-70bfe0e50651",
+                                            "timerange": "Last 12 hours"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Entities_-_Get_Hosts": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Foreach"
+                        },
+                        "Initialize_variable_-_High_Assets": {
+                            "runAfter": {
+                                "Initialize_variable_-_Watchlist_name": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "HighAssetHost",
+                                        "type": "array"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_variable_-_Watchlist_name": {
+                            "runAfter": {},
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "WatchlistName",
+                                        "type": "string",
+                                        "value": "HighValueAssets"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_variable_-_not_high_assets": {
+                            "runAfter": {
+                                "Initialize_variable_-_High_Assets": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "NotHighAssetHost",
+                                        "type": "array"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azuremonitorlogs": {
+                                "connectionId": "[parameters('connections_azuremonitorlogs_2_externalid')]",
+                                "connectionName": "azuremonitorlogs-2",
+                                "id": "/subscriptions/f1e4d1e9-981c-4b74-b191-70bfe0e50651/providers/Microsoft.Web/locations/westeurope/managedApis/azuremonitorlogs"
+                            },
+                            "azuresentinel_2": {
+                                "connectionId": "[parameters('connections_azuresentinel_2_externalid')]",
+                                "connectionName": "azuresentinel-2",
+                                "connectionProperties": {
+                                    "authentication": {
+                                        "type": "ManagedServiceIdentity"
+                                    }
+                                },
+                                "id": "/subscriptions/f1e4d1e9-981c-4b74-b191-70bfe0e50651/providers/Microsoft.Web/locations/westeurope/managedApis/azuresentinel"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
