@@ -20,7 +20,7 @@
 },
 "parameters": {
 "PlaybookName": {
-"defaultValue": "Watchlist-HighValueAsset",
+"defaultValue": "Watchlist-NetworkAddresses",
 "type": "string"
 }
 },
@@ -51,7 +51,7 @@
                 },
                 "host": {
                     "connection": {
-                        "name": "@parameters('$connections')['azuresentinel_2']['connectionId']"
+                        "name": "@parameters('$connections')['azuresentinel_1']['connectionId']"
                     }
                 },
                 "path": "/incident-creation"
@@ -61,7 +61,7 @@
     "actions": {
         "Add_comment_to_incident_(V3)": {
             "runAfter": {
-                "Create_HTML_table_-_OtherAssets": [
+                "Create_HTML_table_-_not_safe": [
                     "Succeeded"
                 ]
             },
@@ -69,11 +69,11 @@
             "inputs": {
                 "body": {
                     "incidentArmId": "@triggerBody()?['object']?['id']",
-                    "message": "<p>A playbook ran to check if the Hosts in this incident are part of the High Value Assets watchlist (@{variables('WatchlistName')}).<br>\nThe following Hosts were found:<br>\n<br>\n<br>\n@{body('Create_HTML_table_-_HighValueAssets')}<br>\n<br>\n@{body('Create_HTML_table_-_OtherAssets')}</p>"
+                    "message": "<p>A playbook ran to check if the IPs in this incident are part of the Network Addresses IPs watchlist (@{variables('WatchlistName')}).<br>\nThe following IPs &nbsp;found:<br>\n@{body('Create_HTML_table_-_safe')}<br>\n@{body('Create_HTML_table_-_not_safe')}</p>"
                 },
                 "host": {
                     "connection": {
-                        "name": "@parameters('$connections')['azuresentinel_2']['connectionId']"
+                        "name": "@parameters('$connections')['azuresentinel_1']['connectionId']"
                     }
                 },
                 "method": "post",
@@ -81,25 +81,7 @@
             }
         },
         "Condition": {
-            "actions": {
-                "Update_incident": {
-                "runAfter": {},
-                "type": "ApiConnection",
-                "inputs": {
-                    "body": {
-                        "incidentArmId": "@triggerBody()?['object']?['id']",
-                        "severity": "High"
-                    },
-                    "host": {
-                        "connection": {
-                            "name": "@parameters('$connections')['azuresentinel_2']['connectionId']"
-                        }
-                    },
-                    "method": "put",
-                    "path": "/Incidents"
-                }
-            }
-        },
+        "actions": {},
         "runAfter": {
             "Add_comment_to_incident_(V3)": [
                 "Succeeded"
@@ -108,18 +90,29 @@
         "expression": {
             "and": [
                 {
-                    "not": {
-                        "equals": [
-                            "@length(variables('HighAssetHost'))",
-                            0
-                        ]
-                    }
+                    "equals": [
+                        "@length(variables('notSafeIPs'))",
+                        0
+                    ]
                 }
             ]
         },
-        "type": "If"
+        "type": "If",
+        "description": "This condition checks if all IPs involved in this alert are safe (found in watchlist)"
     },
-    "Create_HTML_table_-_HighValueAssets": {
+    "Create_HTML_table_-_not_safe": {
+        "runAfter": {
+            "Create_HTML_table_-_safe": [
+                "Succeeded"
+            ]
+        },
+        "type": "Table",
+        "inputs": {
+            "format": "HTML",
+            "from": "@variables('notSafeIPs')"
+        }
+    },
+    "Create_HTML_table_-_safe": {
         "runAfter": {
             "For_each": [
                 "Succeeded"
@@ -128,24 +121,12 @@
         "type": "Table",
         "inputs": {
             "format": "HTML",
-            "from": "@variables('HighAssetHost')"
+            "from": "@variables('SafeIPs')"
         }
     },
-    "Create_HTML_table_-_OtherAssets": {
+    "Entities_-_Get_IPs": {
         "runAfter": {
-            "Create_HTML_table_-_HighValueAssets": [
-                "Succeeded"
-            ]
-        },
-        "type": "Table",
-        "inputs": {
-            "format": "HTML",
-            "from": "@variables('NotHighAssetHost')"
-        }
-    },
-    "Entities_-_Get_Hosts": {
-        "runAfter": {
-            "Initialize_variable_-_not_high_assets": [
+            "Initialize_variable_-_not_safe_IPs": [
                 "Succeeded"
             ]
         },
@@ -154,25 +135,25 @@
             "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
             "host": {
                 "connection": {
-                    "name": "@parameters('$connections')['azuresentinel_2']['connectionId']"
+                    "name": "@parameters('$connections')['azuresentinel_1']['connectionId']"
                 }
             },
             "method": "post",
-            "path": "/entities/host"
+            "path": "/entities/ip"
         }
     },
     "For_each": {
-        "foreach": "@body('Entities_-_Get_Hosts')?['Hosts']",
+        "foreach": "@body('Entities_-_Get_IPs')?['IPs']",
         "actions": {
-            "Hostname_found_in_watchlist": {
+            "Condition_-_if_IP_found_in_watchlist": {
                 "actions": {
-                    "Append_to_array_variable": {
+                    "Append_to_array_variable_-_add_to_safe_list": {
                     "runAfter": {},
                     "type": "AppendToArrayVariable",
                     "inputs": {
-                        "name": "HighAssetHost",
+                        "name": "SafeIPs",
                         "value": {
-                            "High Value Assets": "@{items('For_each')?['HostName']}"
+                            "SafeIPs": "@{items('For_each')?['Address']}"
                         }
                     }
                 }
@@ -184,13 +165,13 @@
             },
             "else": {
                 "actions": {
-                    "Append_to_array_variable_2": {
+                    "Append_to_array_variable_-_add_to_not_safe_list": {
                     "runAfter": {},
                     "type": "AppendToArrayVariable",
                     "inputs": {
-                        "name": "NotHighAssetHost",
+                        "name": "notSafeIPs",
                         "value": {
-                            "Other Assets": "@{items('For_each')?['HostName']}"
+                            "NotSafeIPs": "@{items('For_each')?['Address']}"
                         }
                     }
                 }
@@ -206,52 +187,38 @@
                 }
             ]
         },
-        "type": "If"
+        "type": "If",
+        "description": "This condition returns true if IP was found in watchlist, and false if ip was not found."
     },
     "Run_query_and_list_results": {
     "runAfter": {},
     "type": "ApiConnection",
     "inputs": {
-        "body": "_GetWatchlist(\"@{variables('WatchlistName')}\") \n| where  ['Asset FQDN'] startswith \"@{items('For_each')?['HostName']}\"",
+        "body": "_GetWatchlist(\"@{variables('WatchlistName')}\") \n| where ipv4_is_in_range(\"@{items('For_each')?['Address']}\",SearchKey)",
         "host": {
             "connection": {
-                "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                "name": "@parameters('$connections')['azuremonitorlogs_1']['connectionId']"
             }
         },
         "method": "post",
         "path": "/queryData",
         "queries": {
-            "resourcegroups": "",
-            "resourcename": "",
+            "resourcegroups": "@triggerBody()?['workspaceInfo']?['ResourceGroupName']",
+            "resourcename": "@triggerBody()?['workspaceInfo']?['WorkspaceName']",
             "resourcetype": "Log Analytics Workspace",
-            "subscriptions": "",
+            "subscriptions": "@triggerBody()?['workspaceInfo']?['SubscriptionId']",
             "timerange": "Last 12 hours"
         }
-    }
+    },
+    "description": "Check if IP address is in watchlist"
 }
 },
 "runAfter": {
-"Entities_-_Get_Hosts": [
+"Entities_-_Get_IPs": [
     "Succeeded"
 ]
 },
 "type": "Foreach"
-},
-"Initialize_variable_-_High_Assets": {
-"runAfter": {
-"Initialize_variable_-_Watchlist_name": [
-    "Succeeded"
-]
-},
-"type": "InitializeVariable",
-"inputs": {
-"variables": [
-    {
-        "name": "HighAssetHost",
-        "type": "array"
-    }
-]
-}
 },
 "Initialize_variable_-_Watchlist_name": {
 "runAfter": {},
@@ -261,14 +228,14 @@
 {
     "name": "WatchlistName",
     "type": "string",
-    "value": "HighValueAssets"
+    "value": "NetworkAddresses"
 }
 ]
 }
 },
-"Initialize_variable_-_not_high_assets": {
+"Initialize_variable_-_not_safe_IPs": {
 "runAfter": {
-"Initialize_variable_-_High_Assets": [
+"Initialize_variable_-_safe_IPs": [
 "Succeeded"
 ]
 },
@@ -276,7 +243,23 @@
 "inputs": {
 "variables": [
 {
-    "name": "NotHighAssetHost",
+    "name": "notSafeIPs",
+    "type": "array"
+}
+]
+}
+},
+"Initialize_variable_-_safe_IPs": {
+"runAfter": {
+"Initialize_variable_-_Watchlist_name": [
+"Succeeded"
+]
+},
+"type": "InitializeVariable",
+"inputs": {
+"variables": [
+{
+    "name": "SafeIPs",
     "type": "array"
 }
 ]
@@ -288,12 +271,12 @@
 "parameters": {
 "$connections": {
 "value": {
-"azuremonitorlogs": {
+"azuremonitorlogs_1": {
 "connectionId": "[resourceId('Microsoft.Web/connections', variables('AzuremonitorlogsConnectionName'))]",
 "connectionName": "[variables('AzuremonitorlogsConnectionName')]",
 "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azuremonitorlogs')]"
 },
-"azuresentinel_2": {
+"azuresentinel_1": {
 "connectionId": "[resourceId('Microsoft.Web/connections', variables('MicrosoftSentinelConnectionName'))]",
 "connectionName": "[variables('MicrosoftSentinelConnectionName')]",
 "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azuresentinel')]",
@@ -311,7 +294,10 @@
 "type": "Microsoft.Logic/workflows",
 "location": "[resourceGroup().location]",
 "tags": {
-"hidden-SentinelTemplateName": "Watchlist-HighValueAsset",
+"Environment": "",
+"Owner": "",
+"Service": "CoreSub",
+"hidden-SentinelTemplateName": "Watchlist-NetworkAddresses",
 "hidden-SentinelTemplateVersion": "1.0"
 },
 "identity": {

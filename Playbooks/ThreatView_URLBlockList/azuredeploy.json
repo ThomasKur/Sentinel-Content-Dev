@@ -184,10 +184,10 @@
         "method": "post",
         "path": "/queryData",
         "queries": {
-            "resourcegroups": "rg_mtplab_sentinel01",
-            "resourcename": "MTPLabSentinel01",
+            "resourcegroups": "",
+            "resourcename": "",
             "resourcetype": "Log Analytics Workspace",
-            "subscriptions": "f1e4d1e9-981c-4b74-b191-70bfe0e50651",
+            "subscriptions": "",
             "timerange": "Last 24 hours"
         }
     }
