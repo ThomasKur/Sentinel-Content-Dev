@@ -2,10 +2,10 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "metadata": {
-        "title": "",
-        "description": "",
-        "prerequisites": "",
-    "postDeployment": [],
+        "title": "Import TI - ThreatView IP Blocklist",
+        "description": "This playbook will import threat indicators from ThreatView IP Blocklist",
+        "prerequisites": ["The BatchImport Playbook must be present"],
+    "postDeployment":  ["Configure the API Connection: Azuremonitorlogs-Import-TI-ThreatViewIPBlocklist to connect with a service principal"],
     "prerequisitesDeployTemplateFile": "",
     "lastUpdateTime": "",
 "entities": [],
@@ -15,14 +15,44 @@
 "armtemplate": "Generated from https://github.com/Azure/Azure-Sentinel/tree/master/Tools/Playbook-ARM-Template-Generator"
 },
 "author": {
-"name": ""
-}
+"name": "Alex Verboon"
+},
+"releaseNotes": [
+    {
+        "version": "1.0.0",
+        "title": "Import TI - ThreatView IP Blocklist",
+        "notes": [
+        "Initial version"
+        ]
+    }
+    ]
 },
 "parameters": {
-"PlaybookName": {
-"defaultValue": "ThreatView_IPBlockList",
-"type": "string"
-}
+    "workspaceName": {
+        "type": "string",
+        "DefaultValue": "",
+        "metadata": {
+          "description": "Specify the name of the workspace."
+        }
+      },    
+    "ResourceGroup": {
+        "type": "string",
+        "DefaultValue": "",
+        "metadata": {
+          "description": "Specify the Resource Group Name."
+        }
+      },
+      "SubscriptionId": {
+        "defaultValue": "",
+        "type": "string",
+        "metadata": {
+          "description": "Specify the subscription id."
+        }
+    },
+    "PlaybookName": {
+    "defaultValue": "Import-TI-ThreatViewIPBlocklist",
+    "type": "string"
+    }
 },
 "variables": {
 "AzuremonitorlogsConnectionName": "[concat('Azuremonitorlogs-', parameters('PlaybookName'))]"
@@ -117,16 +147,16 @@
         "body": "let IPBlockList = (externaldata(IPAddress:string) [@\"https://threatview.io/Downloads/IP-High-Confidence-Feed.txt\"]\nwith (format=\"csv\",ignoreFirstRecord=true))\n| where isnotempty(IPAddress);\nIPBlockList",
         "host": {
             "connection": {
-                "name": "@parameters('$connections')['azuremonitorlogs_2']['connectionId']"
+                "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
             }
         },
         "method": "post",
         "path": "/queryData",
         "queries": {
-            "resourcegroups": "rg_mtplab_sentinel01",
-            "resourcename": "MTPLabSentinel01",
+            "resourcegroups": "[parameters('ResourceGroup')]",
+            "resourcename": "[parameters('workspaceName')]",
             "resourcetype": "Log Analytics Workspace",
-            "subscriptions": "f1e4d1e9-981c-4b74-b191-70bfe0e50651",
+            "subscriptions": "[parameters('SubscriptionId')]",
             "timerange": "Last 24 hours"
         }
     }
@@ -158,7 +188,7 @@
 "parameters": {
 "$connections": {
 "value": {
-"azuremonitorlogs_2": {
+"azuremonitorlogs": {
     "connectionId": "[resourceId('Microsoft.Web/connections', variables('AzuremonitorlogsConnectionName'))]",
     "connectionName": "[variables('AzuremonitorlogsConnectionName')]",
     "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/Azuremonitorlogs')]"
@@ -171,7 +201,7 @@
 "type": "Microsoft.Logic/workflows",
 "location": "[resourceGroup().location]",
 "tags": {
-"hidden-SentinelTemplateName": "ThreatView_IPBlockList",
+"hidden-SentinelTemplateName": "Import-TI-ThreatViewIPBlocklist",
 "hidden-SentinelTemplateVersion": "1.0"
 },
 "identity": {
