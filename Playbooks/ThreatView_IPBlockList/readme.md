@@ -9,11 +9,11 @@ Threat Intellgience Source: [ThreatView](https://threatview.io/) [IP Blocklist](
 ## Prerequisites
 
 1. This playbook has a dependency on the BatchImport playbook
-2. Create a service principal that has access to the Sentinel Log Analytics workspace
+2. Service principal that has access to the Sentinel Log Analytics workspace
 
 ## Configurations
 
-* After importing the playbook, open the playbook and configure the connection for the Azure Monitor connector.
+* After importing the playbook, open the playbook and configure the connection for the Azure Monitor connector. Configure the API connection to connect with a service principal.
 
 ![](https://github.com/alexverboon/Sentinel-Content-Dev/blob/59c92c63e8b4e3dc7bbfeda66b634aee40211cf7/Playbooks/ThreatView_IPBlockList/images/azuremonitor-connection.png)
 
