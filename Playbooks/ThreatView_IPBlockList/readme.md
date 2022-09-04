@@ -31,3 +31,13 @@ Before deploying this playbook, make sure you have the [BatchImportToSentinel](.
 * Optionally, configure the Threat Intelligence data import settings, such as the expiration time for the imported TI.
 
 ![TI settings](./images/ti_data.png)
+
+
+## Result
+
+ThreatIntelligenceIndicator
+| where SourceSystem == "SecurityGraph"
+| where Description == "ThreatView-IPBlockList"
+
+
+
