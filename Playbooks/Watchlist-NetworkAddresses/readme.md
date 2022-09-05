@@ -8,7 +8,7 @@ The playbook ***Watchlist-NetWork-Addresses*** check if any of the Incident IP A
 
 ## Prerequisites
 
-1. Managed Identity
+1. Managed Identity must have Sentinel Contribor role.
 2. The Service principal must have access to the Sentinel Log Analytics workspace
 3. The watchlist 'Network addresses' must be present and have IP ranges of known networks defined
 
@@ -24,14 +24,14 @@ The playbook ***Watchlist-NetWork-Addresses*** check if any of the Incident IP A
 
 ![assign role](./images/Identity_role1.png)
 
-![assign role](./images/Identity_role1.png)
+![assign role](./images/Identity_role2.png)
 
 ### Configure the connections
 
 Configure the connection to use the Managed Identity
 ![Get Entities connection](./images/configure_conn1.png)
 
-![Get entities connection](./images/configure_conn1.png)
+![Get entities connection](./images/configure_conn2.png)
 
 Configure the connection to use the Service Principal that you have setup for Sentinel Playbooks.
 > Note! the service principal must have access to the Sentinel Log Analytics workspace
