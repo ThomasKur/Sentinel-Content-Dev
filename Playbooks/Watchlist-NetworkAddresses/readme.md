@@ -24,7 +24,7 @@ The playbook ***Watchlist-NetWork-Addresses*** check if any of the Incident IP A
 
 ![assign role](./images/Identity_role1.png)
 
-![assign role](./images/Identity_role2.png)
+![assign role](./images/identity_role2.png)
 
 ### Configure the connections
 
