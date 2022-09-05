@@ -1,13 +1,30 @@
-# Watchlist-HighValueAsset
+# Watchlist-HighValue-Assets
 
 ## Description
 
-The Playbook Watchlist-HighValueAsset checks if any of the Incident Host entities is present in the HighValueAsset watchlist
-and ads the result into the Incident Comment. 
+The playbook ***Watchlist-HighValue-Assets *** check if any of the Incident Host entities is within the range of the High ***Value Assets*** watchlist. 
 
-If a host match was found, the incident Severity Level is changed to high
 
-## Playbook connections
 
-- Managed Identity
-- App regisration to access the sentinel log analytics workspace
+## Prerequisites
+
+1. Managed Identity
+2. The Service principal must have access to the Sentinel Log Analytics workspace
+3. The watchlist 'High Value Assets' must be present and have devices registered
+
+
+## Deployment
+
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Falexverboon%2FSentinel-Content-Dev%2Fmain%2FPlaybooks%2FWatchlist-HighValueAsset%2Fazuredeploy.json)
+
+[![Deploy to Azure Gov](https://aka.ms/deploytoazuregovbutton)](https://portal.azure.us/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Falexverboon%2FSentinel-Content-Dev%2Fmain%2FPlaybooks%2FWWatchlist-HighValueAsset%2Fazuredeploy.json)
+
+
+## Configuration
+
+
+## Results
+
+
+

@@ -2,9 +2,9 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "metadata": {
-        "title": "",
-        "description": "",
-        "prerequisites": "",
+        "title": "Watchlist-NetWork-Addresses",
+        "description": "This playbook checks whether the IP address entities are within the IP range of the Network Addresses watchlist",
+        "prerequisites": ["The watchlist Network Addresses must be present and contain data"],
     "postDeployment": [],
     "prerequisitesDeployTemplateFile": "",
     "lastUpdateTime": "",
@@ -15,12 +15,12 @@
 "armtemplate": "Generated from https://github.com/Azure/Azure-Sentinel/tree/master/Tools/Playbook-ARM-Template-Generator"
 },
 "author": {
-"name": ""
+"name": "Alex Verboon"
 }
 },
 "parameters": {
 "PlaybookName": {
-"defaultValue": "Watchlist-NetworkAddresses",
+"defaultValue": "Watchlist-NetWork-Addresses",
 "type": "string"
 }
 },
