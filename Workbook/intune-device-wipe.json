@@ -4,7 +4,7 @@
     {
       "type": 1,
       "content": {
-        "json": "## LGT Intune Device Actions Report\n---\nThis report shows the following Intune Audit activities for Apple iOS devices:\n\n- Delete ManagedDevice\n- Wipe ManagedDevice\n- Retire ManagedDevice\n"
+        "json": "## Intune Device Actions Report\n---\nThis report shows the following Intune Audit activities for Apple iOS devices:\n\n- Delete ManagedDevice\n- Wipe ManagedDevice\n- Retire ManagedDevice\n"
       },
       "name": "text - 2"
     },
@@ -202,7 +202,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/4dee4cbb-9b40-427b-b9ea-f4f1988f4a5a/resourcegroups/p-cp-rgr-core-01/providers/microsoft.operationalinsights/workspaces/p-cp-ala-core-001"
+    ""
   ],
   "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
