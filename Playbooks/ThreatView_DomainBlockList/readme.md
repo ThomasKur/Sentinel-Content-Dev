@@ -35,9 +35,11 @@ Before deploying this playbook, make sure you have the [BatchImportToSentinel](.
 
 ## Result
 
+
+```kusto
 ThreatIntelligenceIndicator
 | where SourceSystem == "SecurityGraph"
 | where Description == "ThreatView-DomainBlockList"
-
+```
 
 
