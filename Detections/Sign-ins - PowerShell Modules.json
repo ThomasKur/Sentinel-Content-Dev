@@ -1,0 +1,88 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspace": {
+            "type": "String"
+        }
+    },
+    "resources": [
+        {
+            "id": "[concat(resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'),'/alertRules/0a51314a-87a6-403a-87c9-104557c1ee05')]",
+            "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/0a51314a-87a6-403a-87c9-104557c1ee05')]",
+            "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+            "kind": "Scheduled",
+            "apiVersion": "2022-09-01-preview",
+            "properties": {
+                "displayName": "Alex - Sign-ins - PowerShell Modules",
+                "description": "Shows sigin-ins that originate form accessing services through PowerShell using the AzureAD or Exchange Online PowerShell modules",
+                "severity": "Medium",
+                "enabled": true,
+                "query": "let timeframe = 1d;\r\nSigninLogs \r\n| where TimeGenerated >= ago(timeframe)\r\n| where AppDisplayName has_any (\"Azure Active Directory PowerShell\",\"Microsoft Exchange Online Remote PowerShell\")\r\n| project TimeGenerated, Identity, Location, AlternateSignInName, AppDisplayName, AppId, DeviceDetail, IPAddress, LocationDetails, NetworkLocationDetails, AuthenticationDetails\r\n| extend City = parse_json(LocationDetails[\"city\"])\r\n| extend DeviceOS = parse_json(DeviceDetail[\"operatingSystem\"])\r\n| extend Browser = parse_json(DeviceDetail[\"browser\"])\r\n| extend authenticationMethod = tostring(parse_json(AuthenticationDetails)[0].authenticationMethod) \r\n| extend authenticationStepDateTime = tostring(parse_json(AuthenticationDetails)[0].authenticationStepDateTime)\r\n| extend succeeded = tostring(parse_json(AuthenticationDetails)[0].succeeded)\r\n| project TimeGenerated,authenticationStepDateTime,succeeded, Identity, AlternateSignInName, AppDisplayName, AppId,IPAddress, DeviceOS, Browser,Location, City\r\n",
+                "queryFrequency": "PT5H",
+                "queryPeriod": "PT5H",
+                "triggerOperator": "GreaterThan",
+                "triggerThreshold": 0,
+                "suppressionDuration": "PT5H",
+                "suppressionEnabled": false,
+                "tactics": [
+                    "InitialAccess",
+                    "Collection"
+                ],
+                "techniques": [],
+                "alertRuleTemplateName": null,
+                "incidentConfiguration": {
+                    "createIncident": true,
+                    "groupingConfiguration": {
+                        "enabled": false,
+                        "reopenClosedIncident": false,
+                        "lookbackDuration": "PT5H",
+                        "matchingMethod": "AllEntities",
+                        "groupByEntities": [],
+                        "groupByAlertDetails": [],
+                        "groupByCustomDetails": []
+                    }
+                },
+                "eventGroupingSettings": {
+                    "aggregationKind": "SingleAlert"
+                },
+                "alertDetailsOverride": null,
+                "customDetails": {
+                    "Browser": "Browser",
+                    "DeviceOS": "DeviceOS",
+                    "Location": "Location"
+                },
+                "entityMappings": [
+                    {
+                        "entityType": "IP",
+                        "fieldMappings": [
+                            {
+                                "identifier": "Address",
+                                "columnName": "IPAddress"
+                            }
+                        ]
+                    },
+                    {
+                        "entityType": "Account",
+                        "fieldMappings": [
+                            {
+                                "identifier": "Name",
+                                "columnName": "Identity"
+                            }
+                        ]
+                    },
+                    {
+                        "entityType": "CloudApplication",
+                        "fieldMappings": [
+                            {
+                                "identifier": "Name",
+                                "columnName": "AppDisplayName"
+                            }
+                        ]
+                    }
+                ],
+                "sentinelEntitiesMappings": null
+            }
+        }
+    ]
+}

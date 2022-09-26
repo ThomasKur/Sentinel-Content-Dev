@@ -2,10 +2,10 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "metadata": {
-        "title": "",
-        "description": "",
-        "prerequisites": "",
-    "postDeployment": [],
+        "title": "import TI - ThreatView Domain BlockList",
+        "description": "This playbook will import threat indicators from ThreatView Domain BlockList",
+        "prerequisites": ["The BatchImport Playbook must be present"],
+    "postDeployment":  ["Configure the API Connection: Azuremonitorlogs-Import-TI-ThreatViewDomainBlocklist to connect with a service principal"],
     "prerequisitesDeployTemplateFile": "",
     "lastUpdateTime": "",
 "entities": [],
@@ -15,12 +15,43 @@
 "armtemplate": "Generated from https://github.com/Azure/Azure-Sentinel/tree/master/Tools/Playbook-ARM-Template-Generator"
 },
 "author": {
-"name": ""
-}
+"name": "Alex Verboon"
+
+},
+"releaseNotes": [
+    {
+        "version": "1.0.0",
+        "title": "Import TI - ThreatView Domain Blocklist",
+        "notes": [
+        "Initial version"
+        ]
+    }
+    ]
 },
 "parameters": {
+    "workspaceName": {
+        "type": "string",
+        "DefaultValue": "",
+        "metadata": {
+          "description": "Specify the name of the workspace."
+        }
+      },    
+    "ResourceGroup": {
+        "type": "string",
+        "DefaultValue": "",
+        "metadata": {
+          "description": "Specify the Resource Group Name."
+        }
+      },
+      "SubscriptionId": {
+        "defaultValue": "",
+        "type": "string",
+        "metadata": {
+          "description": "Specify the subscription id."
+        }
+    },
 "PlaybookName": {
-"defaultValue": "ThreatView_DomainBlockList",
+"defaultValue": "Import-TI-ThreatViewDomainBlockList",
 "type": "string"
 }
 },
@@ -184,10 +215,10 @@
         "method": "post",
         "path": "/queryData",
         "queries": {
-            "resourcegroups": "",
-            "resourcename": "",
+            "resourcegroups": "[parameters('ResourceGroup')]",
+            "resourcename": "[parameters('workspaceName')]",
             "resourcetype": "Log Analytics Workspace",
-            "subscriptions": "",
+            "subscriptions": "[parameters('SubscriptionId')]",
             "timerange": "Last 24 hours"
         }
     }
@@ -232,7 +263,7 @@
 "type": "Microsoft.Logic/workflows",
 "location": "[resourceGroup().location]",
 "tags": {
-"hidden-SentinelTemplateName": "ThreatView_DomainBlockList",
+"hidden-SentinelTemplateName": "import-TI-ThreatViewDomainBlockList",
 "hidden-SentinelTemplateVersion": "1.0"
 },
 "identity": {

@@ -1,0 +1,209 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## LGT Intune Device Actions Report\n---\nThis report shows the following Intune Audit activities for Apple iOS devices:\n\n- Delete ManagedDevice\n- Wipe ManagedDevice\n- Retire ManagedDevice\n"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "c6a6f3ee-bc6a-4e48-8882-2ffbae83d0ef",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "value": {
+              "durationMs": 7776000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          },
+          {
+            "id": "fa9c6014-4a93-4a2b-9410-e85ce66f7d64",
+            "version": "KqlParameterItem/1.0",
+            "name": "Operation",
+            "type": 2,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "value": [
+              "value::all"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n    {\"value\": \"Delete ManagedDevice\", \"label\": \"Delete ManagedDevice\"},\r\n    {\"value\": \"retire ManagedDevice\", \"label\": \"retire ManagedDevice\"},\r\n    {\"value\": \"wipe ManagedDevice\", \"label\": \"wipe ManagedDevice\"}\r\n]",
+            "timeContext": {
+              "durationMs": 2592000000
+            }
+          },
+          {
+            "id": "cbbdbf57-4fe7-48af-a4f9-f7a49a3a2acc",
+            "version": "KqlParameterItem/1.0",
+            "name": "pDeviceid",
+            "label": "DeviceId",
+            "type": 1,
+            "value": "All",
+            "timeContext": {
+              "durationMs": 2592000000
+            }
+          },
+          {
+            "id": "05103e87-ef27-45bb-ab70-7ef6feeed6f6",
+            "version": "KqlParameterItem/1.0",
+            "name": "pSerialNumber",
+            "label": "Serialnumber",
+            "type": 1,
+            "description": "The serial number of the device",
+            "value": "All",
+            "timeContext": {
+              "durationMs": 2592000000
+            }
+          },
+          {
+            "id": "9ffa8994-ca75-4152-a857-aa62077e09b6",
+            "version": "KqlParameterItem/1.0",
+            "name": "pUserEmail",
+            "label": "UserEmail",
+            "type": 1,
+            "value": "",
+            "timeContext": {
+              "durationMs": 2592000000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 3"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let AllDevices = IntuneDeviceComplianceOrg\r\n| summarize arg_max(TimeGenerated, *) by DeviceId\r\n| project DeviceName, DeviceType, DeviceId, IMEI, OS, OSDescription, OSVersion, OwnerType, SerialNumber, UserEmail\r\n;\r\nlet IntuneActions = dynamic([\"Delete ManagedDevice\",\r\n\"wipe ManagedDevice\",\r\n\"retire ManagedDevice\"\r\n// \"disableLostMode ManagedDevice\",\r\n// \"enableLostMode ManagedDevice\",\r\n// \"locateDevice ManagedDevice\"\r\n]);\r\nIntuneAuditLogs\r\n| where \"{Operation}\" has OperationName\r\n| summarize arg_max(TimeGenerated,*) by CorrelationId\r\n/// | where OperationName in (IntuneActions)\r\n| extend Result = ResultType\r\n| extend CorrelationId\r\n| extend ActorUPN = tostring(parse_json(tostring(parse_json(Properties).Actor)).UPN)\r\n| extend TargetObjectID = tostring(parse_json(tostring(parse_json(Properties).TargetObjectIds))[0])\r\n|join kind=leftouter  AllDevices\r\non $left.TargetObjectID == $right. DeviceId\r\n| where DeviceType != 1 // Windows\r\n| where DeviceId contains \"{pDeviceid:escape}\" or \"{pDeviceid:escape}\" == \"All\"\r\n| where SerialNumber contains \"{pSerialNumber:escape}\" or \"{pSerialNumber:escape}\" == \"All\"\r\n| where UserEmail contains \"{pUserEmail:escape}\" or \"{pUserEmail:escape}\" == \"All\"\r\n| project TimeGenerated, OperationName, ActorUPN, TargetObjectID, ResultType, DeviceName, DeviceType, DeviceId, IMEI, OS, OSDescription, OSVersion, OwnerType, SerialNumber, UserEmail\r\n| where DeviceType == 8\r\n| summarize count() by OperationName\r\n| render barchart\r\n",
+        "size": 1,
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "OperationName",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "count_",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          },
+          "showBorder": true
+        }
+      },
+      "name": "query - 3"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let AllDevices = IntuneDeviceComplianceOrg\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| project DeviceName, DeviceType, DeviceId, IMEI, OS, OSDescription, OSVersion, OwnerType, SerialNumber, UserEmail\n;\nlet IntuneActions = dynamic([\"Delete ManagedDevice\",\n\"wipe ManagedDevice\",\n\"retire ManagedDevice\"\n// \"disableLostMode ManagedDevice\",\n// \"enableLostMode ManagedDevice\",\n// \"locateDevice ManagedDevice\"\n]);\nIntuneAuditLogs\n| where \"{Operation}\" has OperationName\n| summarize arg_max(TimeGenerated,*) by CorrelationId\n//| where OperationName in (IntuneActions)\n| extend Result = ResultType\n| extend CorrelationId\n| extend ActorUPN = tostring(parse_json(tostring(parse_json(Properties).Actor)).UPN)\n| extend TargetObjectID = tostring(parse_json(tostring(parse_json(Properties).TargetObjectIds))[0])\n|join kind=leftouter  AllDevices\non $left.TargetObjectID == $right. DeviceId\n| where DeviceType != 1 // Windows\n| where DeviceId contains \"{pDeviceid:escape}\" or \"{pDeviceid:escape}\" == \"All\"\n| where SerialNumber contains \"{pSerialNumber:escape}\" or \"{pSerialNumber:escape}\" == \"All\"\n| where UserEmail contains \"{pUserEmail:escape}\" or \"{pUserEmail:escape}\" == \"All\"\n| project TimeGenerated, OperationName, ActorUPN, TargetObjectID, ResultType, DeviceName, DeviceType, DeviceId, IMEI, OS, OSDescription, OSVersion, OwnerType, SerialNumber, UserEmail\n| where DeviceType == 8\n",
+        "size": 2,
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "DeviceId",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "DeviceId",
+            "sortOrder": 1
+          }
+        ]
+      },
+      "name": "query - 2"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/4dee4cbb-9b40-427b-b9ea-f4f1988f4a5a/resourcegroups/p-cp-rgr-core-01/providers/microsoft.operationalinsights/workspaces/p-cp-ala-core-001"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
