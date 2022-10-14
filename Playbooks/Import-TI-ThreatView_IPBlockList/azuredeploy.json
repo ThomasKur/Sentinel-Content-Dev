@@ -53,7 +53,7 @@
     "defaultValue": "Import-TI-ThreatViewIPBlocklist",
     "type": "string"
     },"BatchImportPlaybookName": {
-        "defaultValue": "BatchImportSentinel",
+        "defaultValue": "BatchImportToSentinel",
         "type": "string",
         "metadata": {
           "description": "Specify the name of the batch import playbook."
