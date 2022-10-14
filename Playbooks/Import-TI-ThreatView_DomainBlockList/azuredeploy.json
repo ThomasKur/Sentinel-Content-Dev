@@ -54,6 +54,7 @@
         "metadata": {
           "description": "Specify the name of the batch import playbook."
         }
+      }
     },
 "PlaybookName": {
 "defaultValue": "Import-TI-ThreatViewDomainBlockList",
