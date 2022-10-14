@@ -47,6 +47,12 @@
         "type": "string",
         "metadata": {
           "description": "Specify the subscription id."
+        },
+      "BatchImportPlaybookName": {
+        "defaultValue": "BatchImportSentinel",
+        "type": "string",
+        "metadata": {
+          "description": "Specify the name of the batch import playbook."
         }
     },
 "PlaybookName": {
@@ -97,7 +103,7 @@
                     "host": {
                         "triggerName": "Batch_messages",
                         "workflow": {
-                           "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/',resourceGroup().Name,'/providers/Microsoft.Logic/workflows/BatchImportToSentinel')]"
+                           "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/',resourceGroup().Name,'/providers/Microsoft.Logic/workflows/',parameters('BatchImportPlaybookName'))]"
                         }
                     }
                 }
