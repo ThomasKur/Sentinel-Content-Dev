@@ -47,14 +47,14 @@
         "type": "string",
         "metadata": {
           "description": "Specify the subscription id."
-        },
+        }
+	  },
       "BatchImportPlaybookName": {
         "defaultValue": "BatchImportSentinel",
         "type": "string",
         "metadata": {
           "description": "Specify the name of the batch import playbook."
         }
-      }
     },
 "PlaybookName": {
 "defaultValue": "Import-TI-ThreatViewDomainBlockList",
