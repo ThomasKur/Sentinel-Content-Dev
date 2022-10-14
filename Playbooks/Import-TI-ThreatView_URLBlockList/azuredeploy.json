@@ -52,7 +52,14 @@
 "PlaybookName": {
 "defaultValue": "Import-TI-ThreatViewURLBlockList",
 "type": "string"
-}
+},
+      "BatchImportPlaybookName": {
+        "defaultValue": "BatchImportToSentinel",
+        "type": "string",
+        "metadata": {
+          "description": "Specify the name of the batch import playbook."
+        }
+    }
 },
 "variables": {
 "AzuremonitorlogsConnectionName": "[concat('Azuremonitorlogs-', parameters('PlaybookName'))]"
@@ -97,7 +104,7 @@
                     "host": {
                         "triggerName": "Batch_messages",
                         "workflow": {
-                           "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/',resourceGroup().Name,'/providers/Microsoft.Logic/workflows/BatchImportToSentinel')]"
+                           "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/',resourceGroup().Name,'/providers/Microsoft.Logic/workflows/',parameters('BatchImportPlaybookName'))]"
                         }
                     }
                 }
