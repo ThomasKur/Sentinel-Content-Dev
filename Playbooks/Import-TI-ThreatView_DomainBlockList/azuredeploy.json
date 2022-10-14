@@ -50,7 +50,7 @@
         }
 	  },
       "BatchImportPlaybookName": {
-        "defaultValue": "BatchImportSentinel",
+        "defaultValue": "BatchImportToSentinel",
         "type": "string",
         "metadata": {
           "description": "Specify the name of the batch import playbook."
